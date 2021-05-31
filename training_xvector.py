@@ -10,15 +10,14 @@ import torch
 import time
 import numpy as np
 from torch.utils.data import DataLoader
-from SpeechDataGenerator import SpeechDataGenerator
+from x_vectors.SpeechDataGenerator import SpeechDataGenerator
 import torch.nn as nn
 import os
 from torch import optim
 import argparse
-from models.x_vector_Indian_LID import X_vector
+from x_vectors.models.x_vector_Indian_LID import X_vector
 from sklearn.metrics import accuracy_score
 from utils.utils import speech_collate
-import torch.nn.functional as F
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 

@@ -12,11 +12,11 @@ import pickle
 import time
 import numpy as np
 from torch.utils.data import DataLoader
-from SpeechDataGenerator import SpeechDataGenerator, SpeechDataGeneratorLive
+from x_vectors.SpeechDataGenerator import SpeechDataGenerator, SpeechDataGeneratorLive
 import torch.nn as nn
 import os
 from torch import optim
-from models.x_vector_Indian_LID import X_vector
+from x_vectors.models.x_vector_Indian_LID import X_vector
 from sklearn.metrics import accuracy_score
 from utils.utils import speech_collate
 

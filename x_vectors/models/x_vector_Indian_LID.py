@@ -9,7 +9,7 @@ Created on Sat May 30 19:59:45 2020
 
 
 import torch.nn as nn
-from models.tdnn import TDNN
+from x_vectors.models.tdnn import TDNN
 import torch
 
 
