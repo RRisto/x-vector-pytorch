@@ -10,6 +10,7 @@ from pprint import pprint
 import torch
 import pickle
 import time
+from tqdm import tqdm
 import numpy as np
 from torch.utils.data import DataLoader
 from x_vectors.SpeechDataGenerator import SpeechDataGenerator, SpeechDataGeneratorLive
@@ -25,12 +26,13 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 class Args():
     def __init__(self, training_filepath='meta_et_ru_fi/training.txt', testing_filepath='meta_et_ru_fi/testing.txt',
-                 validation_filepath='meta_et_ru_fi/validation.txt', input_dim=257,
+                 validation_filepath='meta_et_ru_fi/validation.txt', sr=16000, input_dim=257,
                  num_classes=3, lamda_val=0.1, batch_size=256, use_gpu=True, num_epochs=100, lr=0.001, weight_decay=0.0,
                  betas=(0.9, 0.98), eps=1e-9, save_folder='save_model'):
         self.training_filepath = training_filepath
         self.testing_filepath = testing_filepath
         self.validation_filepath = validation_filepath
+        self.sr = sr
         self.input_dim = input_dim
         self.num_classes = num_classes
         self.lamda_val = lamda_val
@@ -73,7 +75,7 @@ class Trainer():
         self.dataloader_test = self._init_dl(self.args.testing_filepath, 'test')
 
     def _init_dl(self, filepath, mode, shuffle=True):
-        dataset = SpeechDataGenerator(manifest=filepath, mode=mode)
+        dataset = SpeechDataGenerator(manifest=filepath, mode=mode, sr=self.args.sr)
         dataloader = DataLoader(dataset, batch_size=self.args.batch_size, shuffle=shuffle,
                                 collate_fn=speech_collate)
         return dataloader
@@ -83,6 +85,7 @@ class Trainer():
         full_preds = []
         full_gts = []
         self.model.train()
+        self.dataloader_train = tqdm(self.dataloader_train)
         for i_batch, sample_batched in enumerate(self.dataloader_train):
 
             features = torch.from_numpy(
@@ -93,7 +96,7 @@ class Trainer():
             self.optimizer.zero_grad()
             pred_logits, x_vec = self.model(features)
             #### CE loss
-            loss = self.loss_fun(pred_logits, labels.type(torch.LongTensor))
+            loss = self.loss_fun(pred_logits, labels.type(torch.LongTensor).to(self.device))
             loss.backward()
             self.optimizer.step()
             train_loss_list.append(loss.item())
@@ -114,6 +117,7 @@ class Trainer():
             val_loss_list = []
             full_preds = []
             full_gts = []
+            self.dataloader_val = tqdm(self.dataloader_val)
             for i_batch, sample_batched in enumerate(self.dataloader_val):
                 features = torch.from_numpy(
                     np.asarray([torch_tensor.numpy().T for torch_tensor in sample_batched[0]])).float()
@@ -121,7 +125,7 @@ class Trainer():
                 features, labels = features.to(self.device), labels.to(self.device)
                 pred_logits, x_vec = self.model(features)
                 #### CE loss
-                loss = self.loss_fun(pred_logits, labels.type(torch.LongTensor))
+                loss = self.loss_fun(pred_logits, labels.type(torch.LongTensor).to(self.device))
                 val_loss_list.append(loss.item())
                 # train_acc_list.append(accuracy)
                 predictions = np.argmax(pred_logits.detach().cpu().numpy(), axis=1)
@@ -158,8 +162,8 @@ class Trainer():
         dataloader = DataLoader(dataset, batch_size=self.args.batch_size, collate_fn=speech_collate)
         self.model.eval()
         with torch.no_grad():
-            batch_logits=[]
-            batch_x_vecs=[]
+            batch_logits = []
+            batch_x_vecs = []
             for i_batch, sample_batched in enumerate(dataloader):
                 features = torch.from_numpy(
                     np.asarray([torch_tensor.numpy().T for torch_tensor in sample_batched[0]])).float()

@@ -9,6 +9,7 @@ Created on Sat May 30 20:22:26 2020
 import torch
 import time
 import numpy as np
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 from x_vectors.SpeechDataGenerator import SpeechDataGenerator
 import torch.nn as nn
@@ -28,6 +29,7 @@ parser.add_argument('-testing_filepath', type=str, default='meta_et_ru_fi/testin
 parser.add_argument('-validation_filepath', type=str, default='meta_et_ru_fi/validation.txt')
 
 parser.add_argument('-input_dim', action="store_true", default=257)
+parser.add_argument('-sr', action="store_true", default=16000)
 parser.add_argument('-num_classes', action="store_true", default=3)
 parser.add_argument('-lamda_val', action="store_true", default=0.1)
 parser.add_argument('-batch_size', action="store_true", default=256)
@@ -37,13 +39,13 @@ parser.add_argument('-num_epochs', action="store_true", default=100)
 args = parser.parse_args()
 
 ### Data related
-dataset_train = SpeechDataGenerator(manifest=args.training_filepath, mode='train')
+dataset_train = SpeechDataGenerator(manifest=args.training_filepath, mode='train', sr=args.sr)
 dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=True, collate_fn=speech_collate)
 
-dataset_val = SpeechDataGenerator(manifest=args.validation_filepath, mode='train')
+dataset_val = SpeechDataGenerator(manifest=args.validation_filepath, mode='train', sr=args.sr)
 dataloader_val = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=True, collate_fn=speech_collate)
 
-dataset_test = SpeechDataGenerator(manifest=args.testing_filepath, mode='test')
+dataset_test = SpeechDataGenerator(manifest=args.testing_filepath, mode='test', sr=args.sr)
 dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, shuffle=True, collate_fn=speech_collate)
 
 ## Model related
@@ -59,6 +61,7 @@ def train(dataloader_train, epoch):
     full_preds = []
     full_gts = []
     model.train()
+    dataloader_train = tqdm(dataloader_train)
     for i_batch, sample_batched in enumerate(dataloader_train):
 
         features = torch.from_numpy(np.asarray([torch_tensor.numpy().T for torch_tensor in sample_batched[0]])).float()

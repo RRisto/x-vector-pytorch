@@ -13,11 +13,12 @@ from utils import utils
 class SpeechDataGenerator():
     """Speech dataset."""
 
-    def __init__(self, manifest, mode):
+    def __init__(self, manifest, mode, sr):
         """
         Read the textfile and get the paths
         """
         self.mode = mode
+        self.sr = sr
         self.audio_links = [line.rstrip('\n').split(' ')[0] for line in open(manifest)]
         self.labels = [int(line.rstrip('\n').split(' ')[1]) for line in open(manifest)]
 
@@ -28,7 +29,7 @@ class SpeechDataGenerator():
         audio_link = self.audio_links[idx]
         class_id = self.labels[idx]
         # lang_label=lang_id[self.audio_links[idx].split('/')[-2]]
-        spec = utils.load_data(audio_link, mode=self.mode)
+        spec = utils.load_data(audio_link, sr=self.sr, mode=self.mode)
         sample = {'features': torch.from_numpy(np.ascontiguousarray(spec)),
                   'labels': torch.from_numpy(np.ascontiguousarray(class_id))}
         return sample
