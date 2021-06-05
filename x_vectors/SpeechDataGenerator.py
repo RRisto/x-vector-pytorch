@@ -36,10 +36,11 @@ class SpeechDataGenerator():
 
 
 class SpeechDataGeneratorLive(SpeechDataGenerator):
-    def __init__(self, audio_links, mode='test'):
+    def __init__(self, audio_links, mode='test', sr=16000):
         """
         Read the textfile and get the paths
         """
         self.mode = mode
+        self.sr = sr
         self.audio_links = audio_links
         self.labels = [0 for i in range(len(self.audio_links))]

@@ -160,6 +160,7 @@ class Trainer():
     def predict(self, filepaths):
         dataset = SpeechDataGeneratorLive(filepaths)
         dataloader = DataLoader(dataset, batch_size=self.args.batch_size, collate_fn=speech_collate)
+        self.model.to(self.device)
         self.model.eval()
         with torch.no_grad():
             batch_logits = []
