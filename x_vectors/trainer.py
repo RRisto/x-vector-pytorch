@@ -15,7 +15,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 
 from feature_extraction import extract_features
-from x_vectors.SpeechDataGenerator import SpeechDataGenerator, SpeechDataGeneratorLive, SpeechDataGeneratorFromFeat
+from x_vectors.SpeechDataGenerator import SpeechDataGeneratorLive, SpeechDataGeneratorFromFeat
 import torch.nn as nn
 import os
 from torch import optim
@@ -172,7 +172,7 @@ class Trainer():
         self._init_dls()
         if num_epochs is not None:
             self.args.num_epochs = num_epochs
-        best_val_loss = -np.inf
+        best_val_loss = np.inf
         for epoch in range(self.args.num_epochs):
             start_time = time.time()
             mean_train_acc, mean_train_loss = self.train_epoch()
@@ -184,7 +184,7 @@ class Trainer():
             mean_val_acc, mean_val_loss = self.validate_epoch()
             print(
                 f'Total validation loss {round(mean_val_loss, 3)} and validation accuracy {round(mean_val_acc, 3)} after {epoch} epochs')
-            if best_val_loss < mean_val_loss:
+            if best_val_loss > mean_val_loss:
                 best_val_loss = mean_val_loss
                 self.save_model(best_val_loss, epoch)
 
