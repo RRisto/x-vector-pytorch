@@ -13,7 +13,9 @@ import time
 from tqdm import tqdm
 import numpy as np
 from torch.utils.data import DataLoader
-from x_vectors.SpeechDataGenerator import SpeechDataGenerator, SpeechDataGeneratorLive
+
+from feature_extraction import extract_features
+from x_vectors.SpeechDataGenerator import SpeechDataGenerator, SpeechDataGeneratorLive, SpeechDataGeneratorFromFeat
 import torch.nn as nn
 import os
 from torch import optim
@@ -25,13 +27,15 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 class Args():
-    def __init__(self, training_filepath='meta_et_ru_fi/training.txt', testing_filepath='meta_et_ru_fi/testing.txt',
-                 validation_filepath='meta_et_ru_fi/validation.txt', sr=16000, input_dim=257,
-                 num_classes=3, lamda_val=0.1, batch_size=256, use_gpu=True, num_epochs=100, lr=0.001, weight_decay=0.0,
-                 betas=(0.9, 0.98), eps=1e-9, save_folder='save_model'):
+    def __init__(self, training_filepath='meta_et_ru_fi/training.txt',
+                 validation_filepath='meta_et_ru_fi/validation.txt', feature_link_suffix='_features.txt',
+                 feature_folder='features', sr=16000, input_dim=257, num_classes=3, lamda_val=0.1, batch_size=256,
+                 use_gpu=True, num_epochs=100, lr=0.001, weight_decay=0.0, betas=(0.9, 0.98), eps=1e-9,
+                 save_folder='save_model'):
         self.training_filepath = training_filepath
-        self.testing_filepath = testing_filepath
         self.validation_filepath = validation_filepath
+        self.feature_link_suffix = feature_link_suffix
+        self.feature_folder = feature_folder
         self.sr = sr
         self.input_dim = input_dim
         self.num_classes = num_classes
@@ -67,18 +71,43 @@ class Trainer():
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay,
                                     betas=args.betas, eps=args.eps)
         self.loss_fun = nn.CrossEntropyLoss()
-        self._init_dls()
 
     def _init_dls(self):
         self.dataloader_train = self._init_dl(self.args.training_filepath, 'train')
+        #todo doesntwork in 'test' mode
         self.dataloader_val = self._init_dl(self.args.validation_filepath, 'train')
-        self.dataloader_test = self._init_dl(self.args.testing_filepath, 'test')
 
     def _init_dl(self, filepath, mode, shuffle=True):
-        dataset = SpeechDataGenerator(manifest=filepath, mode=mode, sr=self.args.sr)
+        feature_links_filepath = self._create_features(filepath)
+        dataset = SpeechDataGeneratorFromFeat(manifest=feature_links_filepath, mode=mode, sr=self.args.sr)
         dataloader = DataLoader(dataset, batch_size=self.args.batch_size, shuffle=shuffle,
                                 collate_fn=speech_collate)
         return dataloader
+
+    def _meta_path2feat_links_path(self, meta_filepath):
+        meta_filepath = str(meta_filepath)
+        orig_extension = os.path.splitext(meta_filepath)[-1]
+        feature_links_filepath = meta_filepath.replace(orig_extension, self.args.feature_link_suffix)
+        return feature_links_filepath
+
+    def _create_features(self, filepath):
+        feature_links_filepath = self._meta_path2feat_links_path(filepath)
+        if os.path.isfile(feature_links_filepath):
+            return feature_links_filepath
+
+        print(f'Creating features for {filepath}')
+        audio_links = [line.rstrip('\n').split(' ')[0] for line in open(filepath)]
+        labels = [int(line.rstrip('\n').split(' ')[1]) for line in open(filepath)]
+
+        with open(feature_links_filepath, 'a') as feat_link_file:
+            for i, audio_file in enumerate(audio_links):
+                extract_feats = extract_features(audio_file)
+                filename_base = os.path.splitext(os.path.basename(audio_file))[0]
+                dest_feature_filepath = f'{self.args.feature_folder}/{filename_base}.npy'
+                np.save(dest_feature_filepath, extract_feats)
+                feat_link_row = f'{dest_feature_filepath} {labels[i]}\n'
+                feat_link_file.write(feat_link_row)
+        return feature_links_filepath
 
     def train_epoch(self):
         train_loss_list = []
@@ -139,6 +168,8 @@ class Trainer():
             return mean_acc, mean_loss
 
     def train(self, num_epochs=None):
+        print('Initialising dataloaders')
+        self._init_dls()
         if num_epochs is not None:
             self.args.num_epochs = num_epochs
         best_val_loss = -np.inf

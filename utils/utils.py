@@ -1,7 +1,6 @@
 # Third Party
 import librosa
 import numpy as np
-import random
 
 
 # ===============================================
@@ -70,7 +69,9 @@ def load_npy_data(filepath, spec_len=400, mode='train'):
         randtime = np.random.randint(0, mag_T.shape[1] - spec_len)
         spec_mag = mag_T[:, randtime:randtime + spec_len]
     else:
-        spec_mag = mag_T
+        # spec_mag = mag_T
+        randtime = np.random.randint(0, mag_T.shape[1] - spec_len)
+        spec_mag = mag_T[:, randtime:randtime + spec_len]
     return spec_mag
 
 
