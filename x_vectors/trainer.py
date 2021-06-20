@@ -76,7 +76,7 @@ class Trainer():
         elif self.args.loss_fun == 'AngleLoss':
             self.loss_fun = AngleLoss()
         use_angular = self.args.loss_fun == 'AngleLoss'
-        self.model = X_vector(args.input_dim, args.num_classes, use_angular=use_angular).to(self.device)
+        self.model = X_vector(args.input_dim, args.num_classes, use_angular=use_angular, device=self.device).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay,
                                     betas=args.betas, eps=args.eps)
 
