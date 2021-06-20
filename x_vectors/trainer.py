@@ -70,7 +70,7 @@ class Trainer():
     def __init__(self, args):
         self.args = args
         self.use_cuda = torch.cuda.is_available()
-        self.device = torch.device("cuda" if self.use_cuda else "cpu")
+        self.device = "cuda" if self.use_cuda else "cpu"
         if self.args.loss_fun == 'CrossEntropyLoss':
             self.loss_fun = nn.CrossEntropyLoss()
         elif self.args.loss_fun == 'AngleLoss':
