@@ -33,7 +33,7 @@ class Args():
                  validation_filepath='meta_et_ru_fi/validation.txt', feature_link_suffix='_features.txt',
                  feature_folder='features', sr=16000, input_dim=257, num_classes=3, lamda_val=0.1, batch_size=256,
                  use_gpu=True, num_epochs=100, lr=0.001, weight_decay=0.0, betas=(0.9, 0.98), eps=1e-9,
-                 loss_fun='AngleLoss', save_folder='save_model'):
+                 loss_fun='CrossEntropyLoss', save_folder='save_model'):
         self.training_filepath = training_filepath
         self.validation_filepath = validation_filepath
         self.feature_link_suffix = feature_link_suffix

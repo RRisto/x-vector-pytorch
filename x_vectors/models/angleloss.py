@@ -5,11 +5,11 @@ import torch.nn.functional as F
 
 
 class AngleLinear(nn.Module):
-    def __init__(self, in_features, out_features, m=4):
+    def __init__(self, in_features, out_features, m=4, device='cpu'):
         super(AngleLinear, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = torch.rand(in_features, out_features)
+        self.weight = torch.rand(in_features, out_features).to(device)
         self.weight.data.uniform_(-1, 1).renorm_(2, 1, 1e-5).mul_(1e5)
         # self.weight.data.uniform_(-1, 1).renorm_(2, -1, 1e-5).mul_(1e5)
         self.m = m

@@ -16,7 +16,7 @@ import torch
 
 
 class X_vector(nn.Module):
-    def __init__(self, input_dim=40, num_classes=8, pooling='stat', use_angular=True):
+    def __init__(self, input_dim=40, num_classes=8, pooling='stat', use_angular=True, device='cpu'):
         super(X_vector, self).__init__()
 
         self.tdnn1 = TDNN(input_dim=input_dim, output_dim=512, context_size=5, dilation=1, dropout_p=0.5)
@@ -34,7 +34,7 @@ class X_vector(nn.Module):
         self.softmax = nn.Softmax(dim=1)
         self.use_angluar=use_angular
         if self.use_angluar:
-            self.fc2 = AngleLinear(num_classes, num_classes)
+            self.fc2 = AngleLinear(num_classes, num_classes, device=device)
 
     def forward(self, inputs):
 
