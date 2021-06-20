@@ -19,6 +19,8 @@ from x_vectors.SpeechDataGenerator import SpeechDataGeneratorLive, SpeechDataGen
 import torch.nn as nn
 import os
 from torch import optim
+
+from x_vectors.models.angleloss import AngleLoss
 from x_vectors.models.x_vector_Indian_LID import X_vector
 from sklearn.metrics import accuracy_score
 from utils.utils import speech_collate
@@ -31,7 +33,7 @@ class Args():
                  validation_filepath='meta_et_ru_fi/validation.txt', feature_link_suffix='_features.txt',
                  feature_folder='features', sr=16000, input_dim=257, num_classes=3, lamda_val=0.1, batch_size=256,
                  use_gpu=True, num_epochs=100, lr=0.001, weight_decay=0.0, betas=(0.9, 0.98), eps=1e-9,
-                 save_folder='save_model'):
+                 loss_fun='AngleLoss', save_folder='save_model'):
         self.training_filepath = training_filepath
         self.validation_filepath = validation_filepath
         self.feature_link_suffix = feature_link_suffix
@@ -48,6 +50,8 @@ class Args():
         self.betas = betas
         self.eps = eps
         self.save_folder = save_folder
+        assert loss_fun in ['CrossEntropyLoss', 'AngleLoss']
+        self.loss_fun = loss_fun
 
     def get_args(self):
         pprint(vars(self))
@@ -67,14 +71,18 @@ class Trainer():
         self.args = args
         self.use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
-        self.model = X_vector(args.input_dim, args.num_classes).to(self.device)
+        if self.args.loss_fun == 'CrossEntropyLoss':
+            self.loss_fun = nn.CrossEntropyLoss()
+        elif self.args.loss_fun == 'AngleLoss':
+            self.loss_fun = AngleLoss()
+        use_angular = self.args.loss_fun == 'AngleLoss'
+        self.model = X_vector(args.input_dim, args.num_classes, use_angular=use_angular).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay,
                                     betas=args.betas, eps=args.eps)
-        self.loss_fun = nn.CrossEntropyLoss()
 
     def _init_dls(self):
         self.dataloader_train = self._init_dl(self.args.training_filepath, 'train')
-        #todo doesntwork in 'test' mode
+        # todo doesntwork in 'test' mode
         self.dataloader_val = self._init_dl(self.args.validation_filepath, 'train')
 
     def _init_dl(self, filepath, mode, shuffle=True):
@@ -124,13 +132,16 @@ class Trainer():
             features.requires_grad = True
             self.optimizer.zero_grad()
             pred_logits, x_vec = self.model(features)
-            #### CE loss
             loss = self.loss_fun(pred_logits, labels.type(torch.LongTensor).to(self.device))
             loss.backward()
             self.optimizer.step()
             train_loss_list.append(loss.item())
 
-            predictions = np.argmax(pred_logits.detach().cpu().numpy(), axis=1)
+            if self.args.loss_fun == 'AngleLoss':
+                predictions = np.argmax(pred_logits[0].detach().cpu().numpy(), axis=1)
+            elif self.args.loss_fun == 'CrossEntropyLoss':
+                predictions = np.argmax(pred_logits.detach().cpu().numpy(), axis=1)
+
             for pred in predictions:
                 full_preds.append(pred)
             for lab in labels.detach().cpu().numpy():
@@ -153,11 +164,12 @@ class Trainer():
                 labels = torch.from_numpy(np.asarray([torch_tensor[0].numpy() for torch_tensor in sample_batched[1]]))
                 features, labels = features.to(self.device), labels.to(self.device)
                 pred_logits, x_vec = self.model(features)
-                #### CE loss
                 loss = self.loss_fun(pred_logits, labels.type(torch.LongTensor).to(self.device))
                 val_loss_list.append(loss.item())
-                # train_acc_list.append(accuracy)
-                predictions = np.argmax(pred_logits.detach().cpu().numpy(), axis=1)
+                if self.args.loss_fun == 'AngleLoss':
+                    predictions = np.argmax(pred_logits[0].detach().cpu().numpy(), axis=1)
+                elif self.args.loss_fun == 'CrossEntropyLoss':
+                    predictions = np.argmax(pred_logits.detach().cpu().numpy(), axis=1)
                 for pred in predictions:
                     full_preds.append(pred)
                 for lab in labels.detach().cpu().numpy():
