@@ -21,6 +21,7 @@ import os
 from torch import optim
 
 from x_vectors.models.angleloss import AngleLoss
+from pytorch_metric_learning import losses
 from x_vectors.models.x_vector_Indian_LID import X_vector
 from sklearn.metrics import accuracy_score
 from utils.utils import speech_collate
@@ -50,7 +51,7 @@ class Args():
         self.betas = betas
         self.eps = eps
         self.save_folder = save_folder
-        assert loss_fun in ['CrossEntropyLoss', 'AngleLoss']
+        assert loss_fun in ['CrossEntropyLoss', 'AngleLoss', 'AngularLoss']
         self.loss_fun = loss_fun
 
     def get_args(self):
@@ -75,6 +76,8 @@ class Trainer():
             self.loss_fun = nn.CrossEntropyLoss()
         elif self.args.loss_fun == 'AngleLoss':
             self.loss_fun = AngleLoss()
+        elif self.args.loss_fun == 'AngularLoss':
+            self.loss_fun = losses.AngularLoss()
         use_angular = self.args.loss_fun == 'AngleLoss'
         self.model = X_vector(args.input_dim, args.num_classes, use_angular=use_angular, device=self.device).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay,
@@ -139,7 +142,7 @@ class Trainer():
 
             if self.args.loss_fun == 'AngleLoss':
                 predictions = np.argmax(pred_logits[0].detach().cpu().numpy(), axis=1)
-            elif self.args.loss_fun == 'CrossEntropyLoss':
+            else:
                 predictions = np.argmax(pred_logits.detach().cpu().numpy(), axis=1)
 
             for pred in predictions:
@@ -168,7 +171,7 @@ class Trainer():
                 val_loss_list.append(loss.item())
                 if self.args.loss_fun == 'AngleLoss':
                     predictions = np.argmax(pred_logits[0].detach().cpu().numpy(), axis=1)
-                elif self.args.loss_fun == 'CrossEntropyLoss':
+                else:
                     predictions = np.argmax(pred_logits.detach().cpu().numpy(), axis=1)
                 for pred in predictions:
                     full_preds.append(pred)

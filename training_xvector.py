@@ -4,6 +4,7 @@ args=Args()
 args.get_args()
 args.loss_fun='AngleLoss'
 args.loss_fun='CrossEntropyLoss'
+args.loss_fun='AngularLoss'
 
 trainer=Trainer(args)
 
