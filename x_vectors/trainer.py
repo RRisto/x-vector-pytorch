@@ -81,7 +81,7 @@ class Trainer():
             self.loss_fun = losses.AngularLoss()
         elif self.args.loss_fun == 'AdMSoftmaxLoss':
             self.loss_fun = AdMSoftmaxLoss(3, args.num_classes, s=30.0, m=0.4, device=self.device)
-        use_angular = self.args.loss_fun == 'AngleLoss'
+        use_angular = self.args.loss_fun in ['AngleLoss', 'AdMSoftmaxLoss']
         self.model = X_vector(args.input_dim, args.num_classes, use_angular=use_angular, device=self.device).to(
             self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay,
@@ -144,7 +144,7 @@ class Trainer():
             self.optimizer.step()
             train_loss_list.append(loss.item())
 
-            if self.args.loss_fun == 'AngleLoss':
+            if self.args.loss_fun in ['AngleLoss', 'AdMSoftmaxLoss']:
                 predictions = np.argmax(pred_logits[0].detach().cpu().numpy(), axis=1)
             else:
                 predictions = np.argmax(pred_logits.detach().cpu().numpy(), axis=1)
@@ -173,7 +173,7 @@ class Trainer():
                 pred_logits, x_vec = self.model(features)
                 loss = self.loss_fun(pred_logits, labels.type(torch.LongTensor).to(self.device))
                 val_loss_list.append(loss.item())
-                if self.args.loss_fun == 'AngleLoss':
+                if self.args.loss_fun in ['AngleLoss', 'AdMSoftmaxLoss']:
                     predictions = np.argmax(pred_logits[0].detach().cpu().numpy(), axis=1)
                 else:
                     predictions = np.argmax(pred_logits.detach().cpu().numpy(), axis=1)

@@ -32,7 +32,7 @@ class X_vector(nn.Module):
         self.segment7 = nn.Linear(512, 512)
         self.output = nn.Linear(512, num_classes)
         self.softmax = nn.Softmax(dim=1)
-        self.use_angluar=use_angular
+        self.use_angluar = use_angular
         if self.use_angluar:
             self.fc2 = AngleLinear(num_classes, num_classes, device=device)
 
@@ -54,5 +54,5 @@ class X_vector(nn.Module):
         x_vec = self.segment7(segment6_out)
         predictions = self.output(x_vec)
         if self.use_angluar:
-            predictions=self.fc2(predictions)
+            predictions = self.fc2(predictions)
         return predictions, x_vec
