@@ -6,7 +6,7 @@ import torch.nn.functional as F
 # https://github.com/Leethony/Additive-Margin-Softmax-Loss-Pytorch
 class AdMSoftmaxLoss(nn.Module):
 
-    def __init__(self, in_features, out_features, s=30.0, m=0.4):
+    def __init__(self, in_features, out_features, s=30.0, m=0.4, device='cpu'):
         '''
         AM Softmax Loss
         '''
@@ -15,7 +15,8 @@ class AdMSoftmaxLoss(nn.Module):
         self.m = m
         self.in_features = in_features
         self.out_features = out_features
-        self.fc = nn.Linear(in_features, out_features, bias=False)
+        self.device = device
+        self.fc = nn.Linear(in_features, out_features, bias=False).to(device)
 
     def forward(self, x, labels):
         '''

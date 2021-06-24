@@ -80,7 +80,7 @@ class Trainer():
         elif self.args.loss_fun == 'AngularLoss':
             self.loss_fun = losses.AngularLoss()
         elif self.args.loss_fun == 'AdMSoftmaxLoss':
-            self.loss_fun = AdMSoftmaxLoss(3, args.num_classes, s=30.0, m=0.4)
+            self.loss_fun = AdMSoftmaxLoss(3, args.num_classes, s=30.0, m=0.4, device=self.device)
         use_angular = self.args.loss_fun == 'AngleLoss'
         self.model = X_vector(args.input_dim, args.num_classes, use_angular=use_angular, device=self.device).to(
             self.device)
