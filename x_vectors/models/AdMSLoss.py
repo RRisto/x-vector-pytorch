@@ -22,7 +22,7 @@ class AdMSoftmaxLoss(nn.Module):
         '''
         input shape (N, in_features)
         '''
-        x = x[1]
+
         assert len(x) == len(labels)
         assert torch.min(labels) >= 0
         assert torch.max(labels) < self.out_features
