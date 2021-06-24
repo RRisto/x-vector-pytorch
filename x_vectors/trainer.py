@@ -20,6 +20,7 @@ import torch.nn as nn
 import os
 from torch import optim
 
+from x_vectors.models.AdMSLoss import AdMSoftmaxLoss
 from x_vectors.models.angleloss import AngleLoss
 from pytorch_metric_learning import losses
 from x_vectors.models.x_vector_Indian_LID import X_vector
@@ -51,7 +52,7 @@ class Args():
         self.betas = betas
         self.eps = eps
         self.save_folder = save_folder
-        assert loss_fun in ['CrossEntropyLoss', 'AngleLoss', 'AngularLoss']
+        assert loss_fun in ['CrossEntropyLoss', 'AngleLoss', 'AngularLoss', 'AdMSoftmaxLoss']
         self.loss_fun = loss_fun
 
     def get_args(self):
@@ -78,8 +79,11 @@ class Trainer():
             self.loss_fun = AngleLoss()
         elif self.args.loss_fun == 'AngularLoss':
             self.loss_fun = losses.AngularLoss()
+        elif self.args.loss_fun == 'AdMSoftmaxLoss':
+            self.loss_fun = AdMSoftmaxLoss(3, args.num_classes, s=30.0, m=0.4)
         use_angular = self.args.loss_fun == 'AngleLoss'
-        self.model = X_vector(args.input_dim, args.num_classes, use_angular=use_angular, device=self.device).to(self.device)
+        self.model = X_vector(args.input_dim, args.num_classes, use_angular=use_angular, device=self.device).to(
+            self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay,
                                     betas=args.betas, eps=args.eps)
 

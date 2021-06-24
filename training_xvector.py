@@ -5,6 +5,7 @@ args.get_args()
 args.loss_fun='AngleLoss'
 args.loss_fun='CrossEntropyLoss'
 args.loss_fun='AngularLoss'
+args.loss_fun='AdMSoftmaxLoss'
 
 trainer=Trainer(args)
 
