@@ -29,7 +29,7 @@ class AngleLinear(nn.Module):
         ww = w.renorm(2, 1, 1e-5).mul(1e5)
         xlen = x.pow(2).sum(1).pow(0.5)  # size=B
 
-        cos_theta = x.mm(ww)  # size=(B,Classnum)
+        cos_theta = x.mm(ww)  # size=(B,Classnum) #angle between x and ww
         cos_theta = cos_theta / xlen.view(-1, 1)
         cos_theta = cos_theta.clamp(-1, 1)
 
